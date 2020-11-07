@@ -80,7 +80,7 @@ atlantic_df.dtypes
 
 #atlantic_df[["Name", "Date", "Time", "Event", "Status", "Latitude", "Longitude", "Maximum Wind", "Minimum Pressure"]]
 
-save_df = 'atlantic_modified13.csv'
+save_df = 'atlantic_modified15.csv'
 
 atlantic_df.to_csv(save_df)
 
@@ -92,9 +92,11 @@ print(df)
 #1. How many hurricanes make landfall.
 ## count(select unique ID (or name) by Status = 'HU' and Event = 'L')
 
-filter1 = df['Status']=='HU'
-filter2 = df['Event']=='L'
-df_1 = df.loc[filter1&filter2]
+filter_hurricane = df['Status']=='HU'
+filter_landfall = df['Event']=='L'
+filter_no_landfall = df['Event'] != 'L'
+
+df_1 = df.loc[filter_hurricane&filter_landfall]
 
 print("DF1:")
 print(df_1)
@@ -111,6 +113,17 @@ print("Number of hurricanes :",
 
 
 #2. How many hurricanes reach a certain magnitude, but don’t necessarily make landfall.
+df_2 = df.loc[filter_hurricane&filter_no_landfall]
 
+print("DF2:")
+print(df_2)
+
+
+df_no_landfall = df_2.loc[~df_2['Name'].isin(df_1['Name'])]
+
+n = len(pd.unique(df_no_landfall['Name'])) 
+  
+print("Number of hurricanes to reach a certain magnitude but no landfall:",  
+      n)
 
 #print(df.head())
