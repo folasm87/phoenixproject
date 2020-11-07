@@ -10,8 +10,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import datetime
-import re
-from mpl_toolkits.basemap import Basemap
 
 atlantic_df = pd.read_csv('atlantic.csv')
 
@@ -71,5 +69,23 @@ for i in range(len(atlantic_df)):
 atlantic_df['Datetime'] = datetime_list
 atlantic_df['Datetime'] = pd.to_datetime(atlantic_df['Datetime'], format = '%Y%m%d %H%M')
 
+# clean longitude data, as some points are <-180
+# e.g. -359.1 (359.1W) should be 0.9 (0.9E)
+atlantic_df['Longitude'].loc[lambda s: s < -180] = atlantic_df['Longitude'].loc[lambda x: x < -180] + 360
+
+
 # view new datatypes
 print(atlantic_df.dtypes)
+
+# view min and max longitude and latitude points
+# use these figures to download a map from openstreetmap.org
+boundaries = ((atlantic_df.Longitude.min(), atlantic_df.Longitude.max(), atlantic_df.Latitude.min(), atlantic_df.Latitude.max()))
+
+hurricane_map = plt.imread('map.png')
+fig, ax = plt.subplots(figsize = (8, 8))
+ax.scatter(atlantic_df.Longitude, atlantic_df.Latitude, zorder = 1, alpha = 0.2, c = 'b', s = 10)
+ax.set_title('Plotting Hurricane Data on the Atlantic Ocean Map')
+# axis limits for plot set to min and max figures for latitude and longitude
+ax.set_xlim(boundaries[0], boundaries[1])
+ax.set_ylim(boundaries[2], boundaries[3])
+ax.imshow(hurricane_map, zorder = 0, extent = boundaries, aspect = 'auto')
