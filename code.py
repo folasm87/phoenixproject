@@ -80,7 +80,7 @@ atlantic_df.dtypes
 
 #atlantic_df[["Name", "Date", "Time", "Event", "Status", "Latitude", "Longitude", "Maximum Wind", "Minimum Pressure"]]
 
-save_df = 'atlantic_modified15.csv'
+save_df = 'atlantic_modified19.csv'
 
 atlantic_df.to_csv(save_df)
 
@@ -102,7 +102,7 @@ print("DF1:")
 print(df_1)
 
 
-n = len(pd.unique(df_1['Name'])) 
+n = len(pd.unique(df_1['ID'])) 
   
 print("Number of hurricanes :",  
       n)
@@ -119,11 +119,13 @@ print("DF2:")
 print(df_2)
 
 
-df_no_landfall = df_2.loc[~df_2['Name'].isin(df_1['Name'])]
+df_no_landfall = df_2.loc[~df_2['ID'].isin(df_1['ID'])]
 
-n = len(pd.unique(df_no_landfall['Name'])) 
+n = len(pd.unique(df_no_landfall['ID'])) 
   
 print("Number of hurricanes to reach a certain magnitude but no landfall:",  
       n)
+print("df_no_landfall:")
+print(df_no_landfall)
 
 #print(df.head())
