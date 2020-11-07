@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Nov  7 13:57:05 2020
-
-@author: Khoi Tran (kt2np)
+Project: Hurricanes
+Team: Phoenix
+Names: Steph Verbout, Mark Folashade, Lindsey Shavers, Khoi Tran
+Computing IDs: sv8jy, mf4us, lns4pr, kt2np
 """
 
 import numpy as np
