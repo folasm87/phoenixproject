@@ -1,3 +1,17 @@
+# -*- coding: utf-8 -*-
+"""
+Project: Hurricanes
+
+Team: Phoenix
+
+Names: Steph Verbout, Mark Folashade, Lindsey Shavers, Khoi Tran
+
+computing ID: mf4us, kt2np, sv8jy, lns4pr
+
+
+"""
+
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt 
