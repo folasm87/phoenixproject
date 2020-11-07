@@ -80,7 +80,7 @@ atlantic_df.dtypes
 
 #atlantic_df[["Name", "Date", "Time", "Event", "Status", "Latitude", "Longitude", "Maximum Wind", "Minimum Pressure"]]
 
-save_df = 'atlantic_modified12.csv'
+save_df = 'atlantic_modified13.csv'
 
 atlantic_df.to_csv(save_df)
 
@@ -95,20 +95,19 @@ print(df)
 filter1 = df['Status']=='HU'
 filter2 = df['Event']=='L'
 df_1 = df.loc[filter1&filter2]
-#df_1 = df.where(filter1&filter2, inplace = True)
+
 print("DF1:")
 print(df_1)
-df_2 = df_1.drop_duplicates(subset=["ID"])
 
 
-n = len(pd.unique(df_2['ID'])) 
+n = len(pd.unique(df_1['Name'])) 
   
 print("Number of hurricanes :",  
       n)
 
-save_2 = 'temp1.csv'
+#save_2 = 'temp3.csv'
 
-df_2.to_csv(save_2)
+#df_2.to_csv(save_2)
 
 
 #2. How many hurricanes reach a certain magnitude, but don’t necessarily make landfall.
