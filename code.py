@@ -162,23 +162,23 @@ n = len(pd.unique(df_1['ID']))
 print("Number of hurricanes :", n)
 
 
-df_save = df_1.drop_duplicates(subset=['ID'], keep='last', inplace=False)
-save_2 = 'uniq10.csv'
+df_landfall = df_1.drop_duplicates(subset=['ID'], keep='last', inplace=False)
+landfall = 'landfall.csv'
 
-df_save.to_csv(save_2)
+df_landfall.to_csv(landfall)
 
 
 #HeatMap of Hurricanes that made landfall
 
-hurricaneDF = df_save[["Latitude", "Longitude"]]
+landfallDF = df_landfall[["Latitude", "Longitude"]]
 
 m = folium.Map(location = [25.7617, -80.191788], zoom_start = 13)
 
 
-m.add_children(plugins.HeatMap(hurricaneDF, radius=15))
+m.add_children(plugins.HeatMap(landfallDF, radius=15))
 
-m.save("mymap.html")
-webbrowser.open_new_tab("mymap.html")
+m.save("landfall.html")
+webbrowser.open_new_tab("landfall.html")
 
 
 def cmp(x,y):
@@ -190,7 +190,7 @@ def unique(list1):
     unique_list = (list(list_set)) 
     return unique_list
 
-df_unique_id = unique(df_save['ID'].tolist())
+df_unique_id = unique(df_landfall['ID'].tolist())
 
 print(df_unique_id)
 n = len(df_unique_id) 
