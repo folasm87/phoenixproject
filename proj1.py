@@ -61,31 +61,62 @@ for i in range(len(atlantic_df)):
     else:
         atlantic_df.loc[atlantic_df.index[i], 'Latitude'] = float(atlantic_df.loc[atlantic_df.index[i], 'Latitude'].replace('S', '')) * -1
 
-# second loop for creating datetime variable in proper format
+# second loop for creating datetime and category variables
+# use 0 for non-hurricanes (tropical storms, etc.)
+# 1: Maximum W 64 <= x < 82
+# 2: 82 <= x < 95
+# 3: 95 <= x < 112
+# 4: 112 <= x < 136
+# 5: x >= 136
+
 datetime_list = []
+category_list = []
 for i in range(len(atlantic_df)):
     datetime_list.append(str(atlantic_df.loc[atlantic_df.index[i], 'Date']) + ' ' + atlantic_df.loc[atlantic_df.index[i], 'Time'])
-
+    
+    if atlantic_df.loc[atlantic_df.index[i], 'Status'] != 'HU':
+        category_list.append(0)
+    else:
+        if atlantic_df.loc[atlantic_df.index[i], 'Maximum Wind'] > 136:
+            category_list.append(5)
+        elif atlantic_df.loc[atlantic_df.index[i], 'Maximum Wind'] > 112:
+            category_list.append(4)
+        elif atlantic_df.loc[atlantic_df.index[i], 'Maximum Wind'] > 95:
+            category_list.append(3)
+        elif atlantic_df.loc[atlantic_df.index[i], 'Maximum Wind'] > 82:
+            category_list.append(2)
+        elif atlantic_df.loc[atlantic_df.index[i], 'Maximum Wind'] > 62:
+            category_list.append(1)
+        else:
+            category_list.append(0)
+    
 atlantic_df['Datetime'] = datetime_list
 atlantic_df['Datetime'] = pd.to_datetime(atlantic_df['Datetime'], format = '%Y%m%d %H%M')
+atlantic_df['Category'] = category_list
+
 
 # clean longitude data, as some points are <-180
 # e.g. -359.1 (359.1W) should be 0.9 (0.9E)
 atlantic_df['Longitude'].loc[lambda s: s < -180] = atlantic_df['Longitude'].loc[lambda x: x < -180] + 360
 
-
-# view new datatypes
-print(atlantic_df.dtypes)
-
+### VISUALIZATION
 # view min and max longitude and latitude points
 # use these figures to download a map from openstreetmap.org
 boundaries = ((atlantic_df.Longitude.min(), atlantic_df.Longitude.max(), atlantic_df.Latitude.min(), atlantic_df.Latitude.max()))
 
+## preliminary plot w/ all data points
 hurricane_map = plt.imread('map.png')
 fig, ax = plt.subplots(figsize = (8, 8))
+## adjust alpha, color, size for future plots
+# alpha = windspeed
+# color = storm ID/name
+# size = category/status(?)
 ax.scatter(atlantic_df.Longitude, atlantic_df.Latitude, zorder = 1, alpha = 0.2, c = 'b', s = 10)
 ax.set_title('Plotting Hurricane Data on the Atlantic Ocean Map')
 # axis limits for plot set to min and max figures for latitude and longitude
 ax.set_xlim(boundaries[0], boundaries[1])
 ax.set_ylim(boundaries[2], boundaries[3])
 ax.imshow(hurricane_map, zorder = 0, extent = boundaries, aspect = 'auto')
+
+# saving dataset
+# atlantic_df.to_csv('atlantic_hurricanes.csv')
