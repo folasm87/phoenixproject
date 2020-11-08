@@ -128,16 +128,17 @@ df_save.to_csv(save_2)
 
 atlanticDF = df_save[["Latitude", "Longitude"]]
 
-print(atlanticDF)
+#print(atlanticDF)
 
-map_van = folium.Map(location = [37.773972, -122.431297], zoom_start = 13)
-
-
-map_van.add_children(plugins.HeatMap(atlanticDF, radius=15))
 
 #HeatMap of Hurricanes that made landfall
 
-map_van.save("mymap.html")
+m = folium.Map(location = [37.773972, -122.431297], zoom_start = 13)
+
+
+m.add_children(plugins.HeatMap(atlanticDF, radius=15))
+
+m.save("mymap.html")
 webbrowser.open_new_tab("mymap.html")
 
 #print(map_van)
