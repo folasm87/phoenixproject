@@ -172,15 +172,15 @@ df_landfall.to_csv(landfall)
 
 landfallDF = df_landfall[["Latitude", "Longitude"]]
 
-m = folium.Map(location = [25.7617, -80.191788], zoom_start = 13)
+map_landfall = folium.Map(location = [25.7617, -80.191788], zoom_start = 13)
 
 
-m.add_children(plugins.HeatMap(landfallDF, radius=15))
+map_landfall.add_children(plugins.HeatMap(landfallDF, radius=15))
 
-m.save("landfall.html")
+map_landfall.save("landfall.html")
 webbrowser.open_new_tab("landfall.html")
 
-
+"""
 def cmp(x,y):
      return x==y and len(x)>1
  
@@ -198,6 +198,9 @@ n = len(df_unique_id)
 print("Number of hurricanes(2) :",  
       n)
 
+"""
+
+
 #2. How many hurricanes reach a certain magnitude, but don’t necessarily make landfall.
 df_2 = df.loc[filter_hurricane&filter_no_landfall]
 
@@ -206,6 +209,20 @@ df_no_landfall = df_2.loc[~df_2['ID'].isin(df_1['ID'])]
 n = len(pd.unique(df_no_landfall['ID'])) 
   
 print("Number of hurricanes to reach a certain magnitude but no landfall:", n)
+
+#HeatMap of Hurricanes that do NOT make landfall
+
+noLandFallDF = df_no_landfall[["Latitude", "Longitude"]]
+
+map_no_landfall = folium.Map(location = [25.7617, -80.191788], zoom_start = 13)
+
+
+map_no_landfall.add_children(plugins.HeatMap(noLandFallDF, radius=15))
+
+map_no_landfall.save("no_landfall.html")
+webbrowser.open_new_tab("no_landfall.html")
+
+
 
 
 # view min and max longitude and latitude points
