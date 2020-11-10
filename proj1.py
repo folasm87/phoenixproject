@@ -10,14 +10,15 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import datetime
+from math import sin, cos, sqrt, atan2, radians
 
 atlantic_df = pd.read_csv('atlantic.csv')
 
 # set as data frame
 atlantic_df = pd.DataFrame(atlantic_df)
     
-## cleaning data
-# 1950 onwards, when they began naming storms
+### Cleaning data
+# only select hurricanes from 1950 onwards, when they began naming storms
 atlantic_df = atlantic_df[atlantic_df['Date'] > 19500000]
 # subsetting relevant variables/columns
 atlantic_df = atlantic_df[["ID", "Name", "Date", "Time", "Event", "Status", "Latitude", "Longitude", "Maximum Wind", "Minimum Pressure"]]
@@ -30,7 +31,7 @@ atlantic_df['Status'] = atlantic_df['Status'].str.strip()
 atlantic_df['Longitude'] = atlantic_df['Longitude'].str.strip()
 atlantic_df['Latitude'] = atlantic_df['Latitude'].str.strip()
 
-# trying groupby() for exploratory analysis
+# trying groupby() for initial exploratory analysis
 print(atlantic_df.groupby('ID').mean())
 print(atlantic_df.groupby('Status').mean())
 
@@ -43,23 +44,26 @@ atlantic_df['Time'].unique()
 for i in range(len(atlantic_df)):
     # time
     # ints under four digits when converted to strings need to be prepended with 4 - len() zeroes
-    if len(str(atlantic_df.loc[atlantic_df.index[i], 'Time'])) == 4:
-        atlantic_df.loc[atlantic_df.index[i], 'Time'] = str(atlantic_df.loc[atlantic_df.index[i], 'Time'])
+    timeClean = atlantic_df.iloc[i, atlantic_df.columns.get_loc('Time')]
+    if len(str(timeClean)) == 4:
+        atlantic_df.iloc[i, atlantic_df.columns.get_loc('Time')] = str(timeClean)
     else:
-        zeroes = '0' * (4 - len(str(atlantic_df.loc[atlantic_df.index[i], 'Time'])))
-        atlantic_df.loc[atlantic_df.index[i], 'Time'] = zeroes + str(atlantic_df.loc[atlantic_df.index[i], 'Time'])
+        zeroes = '0' * (4 - len(str(timeClean)))
+        atlantic_df.iloc[i, atlantic_df.columns.get_loc('Time')] = zeroes + str(timeClean)
         
     # longitude
-    if atlantic_df.loc[atlantic_df.index[i], 'Longitude'][-1] == 'W':
-        atlantic_df.loc[atlantic_df.index[i], 'Longitude'] = float(atlantic_df.loc[atlantic_df.index[i], 'Longitude'].replace('W', '')) * -1
+    longClean = atlantic_df.iloc[i, atlantic_df.columns.get_loc('Longitude')]
+    if longClean[-1] == 'W':
+        atlantic_df.iloc[i, atlantic_df.columns.get_loc('Longitude')] = float(longClean.replace('W', '')) * -1
     else:
-        atlantic_df.loc[atlantic_df.index[i], 'Longitude'] = float(atlantic_df.loc[atlantic_df.index[i], 'Longitude'].replace('E', ''))
+        atlantic_df.iloc[i, atlantic_df.columns.get_loc('Longitude')] = float(longClean.replace('E', ''))
     
     # latitude
-    if atlantic_df.loc[atlantic_df.index[i], 'Latitude'][-1] == 'N':
-        atlantic_df.loc[atlantic_df.index[i], 'Latitude'] = float(atlantic_df.loc[atlantic_df.index[i], 'Latitude'].replace('N', ''))
+    latClean = atlantic_df.iloc[i, atlantic_df.columns.get_loc('Latitude')]
+    if latClean[-1] == 'N':
+        atlantic_df.iloc[i, atlantic_df.columns.get_loc('Latitude')] = float(latClean.replace('N', ''))
     else:
-        atlantic_df.loc[atlantic_df.index[i], 'Latitude'] = float(atlantic_df.loc[atlantic_df.index[i], 'Latitude'].replace('S', '')) * -1
+        atlantic_df.iloc[i, atlantic_df.columns.get_loc('Latitude')] = float(latClean.replace('S', '')) * -1
 
 # second loop for creating datetime and category variables
 # use 0 for non-hurricanes (tropical storms, etc.)
@@ -72,51 +76,168 @@ for i in range(len(atlantic_df)):
 datetime_list = []
 category_list = []
 for i in range(len(atlantic_df)):
-    datetime_list.append(str(atlantic_df.loc[atlantic_df.index[i], 'Date']) + ' ' + atlantic_df.loc[atlantic_df.index[i], 'Time'])
+    # create a datetime list by combining variables 'Date' and 'Time'
+    datetime_list.append(str(atlantic_df.iloc[i, atlantic_df.columns.get_loc('Date')]) + ' ' + atlantic_df.iloc[i, atlantic_df.columns.get_loc('Time')])
     
-    if atlantic_df.loc[atlantic_df.index[i], 'Status'] != 'HU':
+    # create a list of hurricane categories, based on wind value
+    windValue = atlantic_df.iloc[i, atlantic_df.columns.get_loc('Maximum Wind')]
+    
+    if atlantic_df.iloc[i, atlantic_df.columns.get_loc('Status')] != 'HU':
         category_list.append(0)
     else:
-        if atlantic_df.loc[atlantic_df.index[i], 'Maximum Wind'] > 136:
+        if windValue > 136:
             category_list.append(5)
-        elif atlantic_df.loc[atlantic_df.index[i], 'Maximum Wind'] > 112:
+        elif windValue > 112:
             category_list.append(4)
-        elif atlantic_df.loc[atlantic_df.index[i], 'Maximum Wind'] > 95:
+        elif windValue > 95:
             category_list.append(3)
-        elif atlantic_df.loc[atlantic_df.index[i], 'Maximum Wind'] > 82:
+        elif windValue > 82:
             category_list.append(2)
-        elif atlantic_df.loc[atlantic_df.index[i], 'Maximum Wind'] > 62:
+        elif windValue > 62:
             category_list.append(1)
         else:
             category_list.append(0)
     
+# join 'Datetime' and 'Category' lists to the main dataset
 atlantic_df['Datetime'] = datetime_list
 atlantic_df['Datetime'] = pd.to_datetime(atlantic_df['Datetime'], format = '%Y%m%d %H%M')
 atlantic_df['Category'] = category_list
 
+# replace -999 values for 'Minimum Pressure' with NaN
+atlantic_df = atlantic_df.replace(-999, pd.NA)
 
 # clean longitude data, as some points are <-180
 # e.g. -359.1 (359.1W) should be 0.9 (0.9E)
-atlantic_df['Longitude'].loc[lambda s: s < -180] = atlantic_df['Longitude'].loc[lambda x: x < -180] + 360
+atlantic_df['Longitude'].loc[lambda i: i < -180] = atlantic_df['Longitude'].loc[lambda i: i < -180] + 360
+
+### Create aggregated dataset per hurricane (per ID): atlantic_aggr_df
+## identify variables such as distance moved (change in long/lat), duration (change in datetime), change in windspeed/pressure/etc.
+
+# two column dataframe of unique hurricanes
+hurricane_list = atlantic_df[['ID', 'Name']].drop_duplicates()
+
+# empty dataframe to form into aggregate dataframe
+# create a list to name columns
+aggrColumnNames = ['ID', 'Name', \
+                   'initialDate', 'endDate', 'duration', \
+                   'netDistanceKm', 'totalDistanceKm', \
+                   'maxLandSpeed', 'minLandSpeed', 'meanLandSpeed', \
+                   'pressureMean', 'pressureStDev',  'pressureMin', \
+                   'pressure25Pct', 'pressureMedian', 'pressure75Pct', \
+                   'pressureMax', 'windMean', 'windStDev', 'windMin', \
+                   'wind25Pct', 'windMedian', 'wind50Pct', 'windMax']
+atlantic_df_aggr = pd.DataFrame(columns = aggrColumnNames)
+
+## function for calculating distance traveled given coordinates, in kilometers
+def coord_to_km(lat1, lat2, long1, long2):
+    # convert coordinates to radian values
+    delta_lat = radians(lat2) - radians(lat1)
+    delta_long = radians(long2) - radians(long1)
+    
+    # calculate change in coordinates in kilometers
+    a = sin(delta_lat / 2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(delta_long / 2)**2
+    distance_km = 2 * atan2(sqrt(a), sqrt(1 - a))
+    return distance_km
+    
+## loop through each hurricane (by ID)
+for i in range(len(hurricane_list)):
+    ## create a subset dataframe for easier calculation/referencing
+    subset_df = atlantic_df[atlantic_df['ID'] == hurricane_list.iloc[i, hurricane_list.columns.get_loc('ID')]]
+    
+    ## 'Duration' variables (3)
+    # initial date, final date, duration
+    # duration = delta between datetimes, object type is Timedelta for duration
+    durationList = [subset_df.Datetime.min(), subset_df.Datetime.max(), subset_df.Datetime.max() - subset_df.Datetime.min()]
+    
+    ## 'Distance Traveled' variable (1)
+    # calculate total distance traveled by hurricane
+    # not the delta because max and min because hurricanes do not necessarily travel in a linear fashion
+    # not an aggregate as hurricanes may move backwards in terms of latitude/longitude, so an aggregate function is not appropriate
+    # convert changes in coordinates to an understandable unit of distance, kilometers
+    distance_float = 0
+    
+    ## Use same loop to create statistics for hurricane land speed, distance traveled/time
+    # list to store hurricane land speeds
+    speed_list = []
+    for i in range(1, len(subset_df)):
+        distance = coord_to_km(subset_df.iloc[i - 1, subset_df.columns.get_loc('Latitude')], \
+                               subset_df.iloc[i, subset_df.columns.get_loc('Latitude')], \
+                               subset_df.iloc[i - 1, subset_df.columns.get_loc('Longitude')], \
+                               subset_df.iloc[i, subset_df.columns.get_loc('Longitude')])
+        distance_float += distance
+        
+        # calculate speed, in km/hr
+        speed_list.append(distance / ((subset_df['Datetime'].iloc[i] - subset_df['Datetime'].iloc[i - 1]).seconds / 3600))
+    
+    # calculate net distance, distance between start and end of hurricane
+    net_distance = coord_to_km(subset_df.Latitude[subset_df.Datetime == subset_df.Datetime.min()], \
+                               subset_df.Latitude[subset_df.Datetime == subset_df.Datetime.max()], \
+                               subset_df.Longitude[subset_df.Datetime == subset_df.Datetime.max()], \
+                               subset_df.Longitude[subset_df.Datetime == subset_df.Datetime.max()])
+    ## New 'Distance' variables (2)
+    # once the distance-calculating for loop ends, append each total distance traveled value to the distance-recording list
+    # also add the net distance traveled, from initial storm start to end
+    distanceList = [net_distance, distance_float]
+    
+    ## new 'Landspeed' variables (3)
+    # once the for loop ends, create a short summary stats list for landspeed and append it to the landspeed list external to the (larger) for loop
+    # max landspeed, min landspeed, mean landspeed
+    landSpeedList = [max(speed_list), min(speed_list), sum(speed_list) / len(speed_list)]
+    
+    ## 'Minimum Pressure' summary stats ()
+    # Series including mean, standard deviation, 50th & 75th percentiles, and maximum values
+    pressureList = subset_df['Minimum Pressure'].describe().iloc[1:8].tolist()
+   
+    
+    ## 'Maximum Wind' summary stats (8)
+    # Series including mean, standard deviation, 50th & 75th percentiles, and maximum values
+    windList = subset_df['Maximum Wind'].describe().iloc[1:8].tolist()
+    
+    ## append to empty data frame
+    appendList = hurricane_list.iloc[i].tolist() + durationList + distanceList + landSpeedList + pressureList + windList
+    appendSeries = pd.Series(appendList, index = aggrColumnNames)
+    atlantic_df_aggr = atlantic_df_aggr.append(appendSeries, ignore_index = True)
+
+##
+# add variables such as:
+# windDelta (max - min)
+# pressureDelta (min - max)
+##
+# consider further aggregation of totalDistanceKm, netDistanceKm, etc.
+# add variable for max category (0,1,2,3,4,5) 
 
 ### VISUALIZATION
 # view min and max longitude and latitude points
 # use these figures to download a map from openstreetmap.org
-boundaries = ((atlantic_df.Longitude.min(), atlantic_df.Longitude.max(), atlantic_df.Latitude.min(), atlantic_df.Latitude.max()))
+###UNCOMMENT BELOW FOR PLOTS###
+# boundaries = (atlantic_df.Longitude.min(), atlantic_df.Longitude.max(), atlantic_df.Latitude.min(), atlantic_df.Latitude.max())
 
-## preliminary plot w/ all data points
-hurricane_map = plt.imread('map.png')
-fig, ax = plt.subplots(figsize = (8, 8))
-## adjust alpha, color, size for future plots
-# alpha = windspeed
-# color = storm ID/name
-# size = category/status(?)
-ax.scatter(atlantic_df.Longitude, atlantic_df.Latitude, zorder = 1, alpha = 0.2, c = 'b', s = 10)
-ax.set_title('Plotting Hurricane Data on the Atlantic Ocean Map')
-# axis limits for plot set to min and max figures for latitude and longitude
-ax.set_xlim(boundaries[0], boundaries[1])
-ax.set_ylim(boundaries[2], boundaries[3])
-ax.imshow(hurricane_map, zorder = 0, extent = boundaries, aspect = 'auto')
+# ## preliminary plot w/ all data points
+# hurricane_map = plt.imread('map.png')
+# fig, ax = plt.subplots(figsize = (8, 8))
+# ## adjust alpha, color, size for future plots
+# # alpha = windspeed
+# # color = storm ID/name
+# # size = category/status(?)
+# ax.scatter(atlantic_df.Longitude, atlantic_df.Latitude, zorder = 1, alpha = 0.2, c = 'b', s = 10)
+# ax.set_title('Plotting Hurricane Data on the Atlantic Ocean Map')
+# # axis limits for plot set to min and max figures for latitude and longitude
+# ax.set_xlim(boundaries[0], boundaries[1])
+# ax.set_ylim(boundaries[2], boundaries[3])
+# ax.imshow(hurricane_map, zorder = 0, extent = boundaries, aspect = 'auto')
 
-# saving dataset
+# ## histogram
+# fig, ax = plt.subplots(1,1)
+# bins = (1,2,3,4,5,6)
+# ax.hist(atlantic_df.Category[atlantic_df['Category'] > 0], bins = bins, align = 'left', rwidth = 0.8, color = 'c')
+# ax.set_xticks(bins[:-1])
+# plt.title("Histogram of Hurricanes by Category 1950-2015") 
+# plt.xlabel("Category")
+# plt.ylabel("Frequency")
+# plt.show()
+###UNCOMMENT ABOVE FOR PLOTS###
+
+## saving dataset
 # atlantic_df.to_csv('atlantic_hurricanes.csv')
+## saving aggregate dataset
+# atlantic_df_aggr.to_csv('atlantic_hurricanes_aggr.csv')
