@@ -133,8 +133,11 @@ aggrColumnNames = ['ID', 'Name', \
                    'maxLandSpeed', 'minLandSpeed', 'meanLandSpeed', \
                    'pressureMean', 'pressureStDev',  'pressureMin', \
                    'pressure25Pct', 'pressureMedian', 'pressure75Pct', \
-                   'pressureMax', 'windMean', 'windStDev', 'windMin', \
-                   'wind25Pct', 'windMedian', 'wind50Pct', 'windMax']
+                   'pressureMax', 'pressureDelta', 'windMean', 'windStDev', \
+                   'windMin', 'wind25Pct', 'windMedian', 'wind50Pct', \
+                   'windMax', 'windDelta', 'maxCategory', 'landfallBool', \
+                   'landfallTimeDelta', 'landfallDatetime', \
+                   'landfallCategory', 'landfallLong', 'landfallLat']
 
 atlantic_df_aggr = pd.DataFrame(columns = aggrColumnNames)
 
@@ -197,32 +200,60 @@ for k in range(len(hurricane_list)):
     ## 'Minimum Pressure' summary stats ()
     # Series including mean, standard deviation, 50th & 75th percentiles, and maximum values
     pressureList = subset_df['Minimum Pressure'].describe().iloc[1:8].tolist()
-   
+    pressureList.append(subset_df['Minimum Pressure'].max() - subset_df['Minimum Pressure'].min())
     
     ## 'Maximum Wind' summary stats (8)
     # Series including mean, standard deviation, 50th & 75th percentiles, and maximum values
     windList = subset_df['Maximum Wind'].describe().iloc[1:8].tolist()
+    # add windDelta, diff between min and max
+    windList.append(subset_df['Maximum Wind'].max() - subset_df['Maximum Wind'].min())
+    
+    ## 'Category' variable, 'maxCategory' (1)
+    categoryList = [subset_df['Category'].max()]
+    
+    ## 'Landfall' variables (6)
+    if subset_df.Event.isin(['L']).any():
+        # if the storm reached land or not
+        landfallBool = True
+        # how long it took the storm to reach land
+        landfallTimeDelta = subset_df.Datetime[subset_df.Event == 'L'].min() - subset_df.Datetime.min()
+        # when the storm reached land
+        landfallDatetime = subset_df.Datetime[subset_df.Event == 'L'].min()
+        # category of the storm when it reached land
+        landfallCategory = subset_df.Category[subset_df.Event == 'L'].iloc[0]
+        # landfall longitude
+        landfallLong = subset_df.loc[subset_df.Event == 'L', 
+                                     ['Longitude', 'Latitude']].iloc[0][0]
+        # landfall latitude
+        landfallLat = subset_df.loc[subset_df.Event == 'L', 
+                                    ['Longitude', 'Latitude']].iloc[0][1]
+    else:
+        landfallBool = False
+        landfallTimeDelta = None
+        landfallDatetime = None
+        landfallCategory = None
+        landfallLong = None
+        landfallLat = None
+    landfallList = [landfallBool, landfallTimeDelta, landfallDatetime, landfallCategory, landfallLong, landfallLat]
     
     ## append to empty data frame
-    appendList = hurricane_list.iloc[k].tolist() + durationList + distanceList + landSpeedList + pressureList + windList
+    appendList = hurricane_list.iloc[k].tolist() + durationList + distanceList + landSpeedList + pressureList + windList + categoryList + landfallList
     appendSeries = pd.Series(appendList, index = aggrColumnNames)
     atlantic_df_aggr = atlantic_df_aggr.append(appendSeries, ignore_index = True)
 
 ##
-# add variables such as:
-# windDelta (max - min)
-# pressureDelta (min - max)
-##
 # consider further aggregation of totalDistanceKm, netDistanceKm, etc.
-# add variable for max category (0,1,2,3,4,5) 
 # potential variable for time spent at max category(?)
 # maybe a shape drawn by the path and area(?)
-# binary categorical variable for making landfall
 # variable(s) w/ list for path (lat/long)
 
 ### VISUALIZATION
 # view min and max longitude and latitude points
 # use these figures to download a map from openstreetmap.org
+# visualize a map for top 20 longest duration storms
+# color = storm ID/name, size = category, alpha = landfall
+
+
 ###UNCOMMENT BELOW FOR PLOTS###
 # boundaries = (atlantic_df.Longitude.min(), atlantic_df.Longitude.max(), atlantic_df.Latitude.min(), atlantic_df.Latitude.max())
 
@@ -233,7 +264,10 @@ for k in range(len(hurricane_list)):
 # # alpha = windspeed
 # # color = storm ID/name
 # # size = category/status(?)
-# ax.scatter(atlantic_df.Longitude, atlantic_df.Latitude, zorder = 1, alpha = 0.2, c = 'b', s = 10)
+# ax.scatter(atlantic_df.Longitude, 
+#            atlantic_df.Latitude, 
+#            zorder = 1, alpha = 0.2, 
+#            c = 'b', s = 10)
 # ax.set_title('Plotting Hurricane Data on the Atlantic Ocean Map')
 # # axis limits for plot set to min and max figures for latitude and longitude
 # ax.set_xlim(boundaries[0], boundaries[1])
