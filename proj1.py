@@ -11,6 +11,12 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import datetime
 from math import sin, cos, sqrt, atan2, radians
+# # install necessary packages
+# import folium
+# from folium import plugins
+# import seaborn as sns
+# import webbrowser
+# import datetime
 
 atlantic_df = pd.read_csv('atlantic.csv')
 
@@ -75,14 +81,14 @@ for i in range(len(atlantic_df)):
 
 datetime_list = []
 category_list = []
-for i in range(len(atlantic_df)):
+for j in range(len(atlantic_df)):
     # create a datetime list by combining variables 'Date' and 'Time'
-    datetime_list.append(str(atlantic_df.iloc[i, atlantic_df.columns.get_loc('Date')]) + ' ' + atlantic_df.iloc[i, atlantic_df.columns.get_loc('Time')])
+    datetime_list.append(str(atlantic_df.iloc[j, atlantic_df.columns.get_loc('Date')]) + ' ' + atlantic_df.iloc[j, atlantic_df.columns.get_loc('Time')])
     
     # create a list of hurricane categories, based on wind value
-    windValue = atlantic_df.iloc[i, atlantic_df.columns.get_loc('Maximum Wind')]
+    windValue = atlantic_df.iloc[j, atlantic_df.columns.get_loc('Maximum Wind')]
     
-    if atlantic_df.iloc[i, atlantic_df.columns.get_loc('Status')] != 'HU':
+    if atlantic_df.iloc[j, atlantic_df.columns.get_loc('Status')] != 'HU':
         category_list.append(0)
     else:
         if windValue > 136:
@@ -113,8 +119,11 @@ atlantic_df['Longitude'].loc[lambda i: i < -180] = atlantic_df['Longitude'].loc[
 ### Create aggregated dataset per hurricane (per ID): atlantic_aggr_df
 ## identify variables such as distance moved (change in long/lat), duration (change in datetime), change in windspeed/pressure/etc.
 
+# force sort data frames before aggregation
+atlantic_df = atlantic_df.sort_values(by = ['ID', 'Datetime'], ascending = True)
+
 # two column dataframe of unique hurricanes
-hurricane_list = atlantic_df[['ID', 'Name']].drop_duplicates()
+hurricane_list = atlantic_df[['ID', 'Name']].drop_duplicates().sort_values(by = ['ID'])
 
 # empty dataframe to form into aggregate dataframe
 # create a list to name columns
@@ -126,6 +135,7 @@ aggrColumnNames = ['ID', 'Name', \
                    'pressure25Pct', 'pressureMedian', 'pressure75Pct', \
                    'pressureMax', 'windMean', 'windStDev', 'windMin', \
                    'wind25Pct', 'windMedian', 'wind50Pct', 'windMax']
+
 atlantic_df_aggr = pd.DataFrame(columns = aggrColumnNames)
 
 ## function for calculating distance traveled given coordinates, in kilometers
@@ -140,9 +150,9 @@ def coord_to_km(lat1, lat2, long1, long2):
     return distance_km
     
 ## loop through each hurricane (by ID)
-for i in range(len(hurricane_list)):
+for k in range(len(hurricane_list)):
     ## create a subset dataframe for easier calculation/referencing
-    subset_df = atlantic_df[atlantic_df['ID'] == hurricane_list.iloc[i, hurricane_list.columns.get_loc('ID')]]
+    subset_df = atlantic_df[atlantic_df['ID'] == hurricane_list.iloc[k, hurricane_list.columns.get_loc('ID')]]
     
     ## 'Duration' variables (3)
     # initial date, final date, duration
@@ -159,15 +169,15 @@ for i in range(len(hurricane_list)):
     ## Use same loop to create statistics for hurricane land speed, distance traveled/time
     # list to store hurricane land speeds
     speed_list = []
-    for i in range(1, len(subset_df)):
-        distance = coord_to_km(subset_df.iloc[i - 1, subset_df.columns.get_loc('Latitude')], \
-                               subset_df.iloc[i, subset_df.columns.get_loc('Latitude')], \
-                               subset_df.iloc[i - 1, subset_df.columns.get_loc('Longitude')], \
-                               subset_df.iloc[i, subset_df.columns.get_loc('Longitude')])
+    for m in range(1, len(subset_df)):
+        distance = coord_to_km(subset_df.iloc[m - 1, subset_df.columns.get_loc('Latitude')], \
+                               subset_df.iloc[m, subset_df.columns.get_loc('Latitude')], \
+                               subset_df.iloc[m - 1, subset_df.columns.get_loc('Longitude')], \
+                               subset_df.iloc[m, subset_df.columns.get_loc('Longitude')])
         distance_float += distance
         
         # calculate speed, in km/hr
-        speed_list.append(distance / ((subset_df['Datetime'].iloc[i] - subset_df['Datetime'].iloc[i - 1]).seconds / 3600))
+        speed_list.append(distance / ((subset_df.iloc[m, subset_df.columns.get_loc('Datetime')] - subset_df.iloc[m - 1, subset_df.columns.get_loc('Datetime')]).seconds / 3600))
     
     # calculate net distance, distance between start and end of hurricane
     net_distance = coord_to_km(subset_df.Latitude[subset_df.Datetime == subset_df.Datetime.min()], \
@@ -194,7 +204,7 @@ for i in range(len(hurricane_list)):
     windList = subset_df['Maximum Wind'].describe().iloc[1:8].tolist()
     
     ## append to empty data frame
-    appendList = hurricane_list.iloc[i].tolist() + durationList + distanceList + landSpeedList + pressureList + windList
+    appendList = hurricane_list.iloc[k].tolist() + durationList + distanceList + landSpeedList + pressureList + windList
     appendSeries = pd.Series(appendList, index = aggrColumnNames)
     atlantic_df_aggr = atlantic_df_aggr.append(appendSeries, ignore_index = True)
 
@@ -205,6 +215,10 @@ for i in range(len(hurricane_list)):
 ##
 # consider further aggregation of totalDistanceKm, netDistanceKm, etc.
 # add variable for max category (0,1,2,3,4,5) 
+# potential variable for time spent at max category(?)
+# maybe a shape drawn by the path and area(?)
+# binary categorical variable for making landfall
+# variable(s) w/ list for path (lat/long)
 
 ### VISUALIZATION
 # view min and max longitude and latitude points
@@ -235,6 +249,13 @@ for i in range(len(hurricane_list)):
 # plt.xlabel("Category")
 # plt.ylabel("Frequency")
 # plt.show()
+
+# ## add heatmap
+# landfallDF = df_landfall[["Latitude", "Longitude"]]
+# map_landfall = folium.Map(location = [25.7617, -80.191788], zoom_start = 13)
+# map_landfall.add_children(plugins.HeatMap(landfallDF, radius=15))
+# map_landfall.save("landfall.html")
+# webbrowser.open_new_tab("landfall.html")
 ###UNCOMMENT ABOVE FOR PLOTS###
 
 ## saving dataset
