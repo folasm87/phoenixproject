@@ -14,10 +14,10 @@ from colorspacious import cspace_converter
 from datetime import datetime, timedelta
 from math import sin, cos, sqrt, atan2, radians
 # # install necessary packages
-import folium
-from folium import plugins
+# import folium
+# from folium import plugins
 # import seaborn as sns
-import webbrowser
+# import webbrowser
 # import datetime
 
 atlantic_df = pd.read_csv('atlantic.csv')
@@ -253,13 +253,7 @@ for k in range(len(hurricane_list)):
     appendSeries = pd.Series(appendList, index = aggrColumnNames)
     atlantic_df_aggr = atlantic_df_aggr.append(appendSeries, ignore_index = True)
 
-##
-# consider further aggregation of totalDistanceKm, netDistanceKm, etc.
-# potential variable for time spent at max category(?)
-# maybe a shape drawn by the path and area(?)
-# variable(s) w/ list for path (lat/long)
-
-## FOR VISUALIZATION
+## FOR TESTING VISUALIZATION
 # view min and max longitude and latitude points
 # use these figures to download a map from openstreetmap.org
 # visualize a map for top 95th percentile longest duration storms
@@ -269,7 +263,7 @@ top95duration = pd.merge(atlantic_df[atlantic_df.ID.isin(top95duration.ID.tolist
                          top95duration, on = ['ID', 'Name'])
 
 boundaries = (atlantic_df.Longitude.min(), atlantic_df.Longitude.max(), atlantic_df.Latitude.min(), atlantic_df.Latitude.max())
-c = top95duration.Category
+c = top95duration.Category + 25
 hurricane_map = plt.imread('map.png')
 fig, ax = plt.subplots(figsize = (8, 8))
 # color = category
@@ -280,87 +274,25 @@ ax.scatter(top95duration.Longitude,
            s = top95duration.duration / 150,
            alpha = 0.50,
            c = c,
-           cmap = 'Blues')
+           cmap = 'plasma')
 ax.set_title('Plotting The 95th Percentile of Longest-Lasting Hurricanes in the Atlantic Ocean')
 # axis limits for plot set to min and max figures for latitude and longitude
 ax.set_xlim(boundaries[0], boundaries[1])
 ax.set_ylim(boundaries[2], boundaries[3])
 ax.imshow(hurricane_map, zorder = 0, 
           extent = boundaries, aspect = 'auto')
+plt.savefig('95pctDurationHurricanes.png')
 
-# ## histogram
-# fig, ax = plt.subplots(1,1)
-# bins = (1,2,3,4,5,6)
-# ax.hist(atlantic_df.Category[atlantic_df['Category'] > 0], bins = bins, align = 'left', rwidth = 0.8, color = 'c')
-# ax.set_xticks(bins[:-1])
-# plt.title("Histogram of Hurricanes by Category 1950-2015") 
-# plt.xlabel("Category")
-# plt.ylabel("Frequency")
-# plt.show()
-
-
-
-save_df = 'atlantic_modified.csv'
-
-atlantic_df.to_csv(save_df)
-
-
-df = pd.read_csv(save_df)
-
-
-#1. How many hurricanes make landfall.
-## count(select unique ID (or name) by Status = 'HU' and Event = 'L')
-
-filter_hurricane = df['Status']=='HU'
-filter_landfall = df['Event']=='L'
-filter_no_landfall = df['Event'] != 'L'
-
-df_1 = df.loc[filter_hurricane&filter_landfall]
-
-
-n = len(pd.unique(df_1['ID'])) 
-  
-print("Number of hurricanes to make Landfall:", n)
-
-
-df_landfall = df_1.drop_duplicates(subset=['ID'], keep='last', inplace=False)
-landfall = 'landfall.csv'
-
-df_landfall.to_csv(landfall)
-
-
-# ## add heatmap
-landfallDF = df_landfall[["Latitude", "Longitude"]]
-map_landfall = folium.Map(location = [25.7617, -80.191788], zoom_start = 13)
-map_landfall.add_child(plugins.HeatMap(landfallDF, radius=15))
-map_landfall.save("landfall.html")
-webbrowser.open_new_tab("landfall.html")
-
-
-
-#2. How many hurricanes reach a certain magnitude, but don’t necessarily make landfall.
-df_2 = df.loc[filter_hurricane&filter_no_landfall]
-
-df_no_landfall = df_2.loc[~df_2['ID'].isin(df_1['ID'])]
-
-n = len(pd.unique(df_no_landfall['ID'])) 
-  
-print("Number of hurricanes to reach a certain magnitude but no landfall:", n)
-
-#HeatMap of Hurricanes that do NOT make landfall
-
-noLandFallDF = df_no_landfall[["Latitude", "Longitude"]]
-
-map_no_landfall = folium.Map(location = [25.7617, -80.191788], zoom_start = 13)
-
-
-map_no_landfall.add_child(plugins.HeatMap(noLandFallDF, radius=15))
-
-map_no_landfall.save("no_landfall.html")
-webbrowser.open_new_tab("no_landfall.html")
-
-
-###UNCOMMENT ABOVE FOR PLOTS###
+## histogram
+fig, ax = plt.subplots(1,1)
+bins = (1,2,3,4,5,6)
+ax.hist(atlantic_df_aggr.maxCategory[atlantic_df_aggr['maxCategory'] > 0], bins = bins, align = 'left', rwidth = 0.8, color = 'c')
+ax.set_xticks(bins[:-1])
+plt.title("Histogram of Hurricanes by Category 1950-2015") 
+plt.xlabel("Category")
+plt.ylabel("Frequency")
+plt.show()
+ax.savefig('hurricaneCategoryHistogram.png')
 
 ## saving dataset
 atlantic_df.to_csv('atlantic_hurricanes.csv')
