@@ -9,7 +9,9 @@ Computing IDs: sv8jy, mf4us, lns4pr, kt2np
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import datetime
+from matplotlib import cm
+from colorspacious import cspace_converter
+from datetime import datetime, timedelta
 from math import sin, cos, sqrt, atan2, radians
 # # install necessary packages
 # import folium
@@ -26,8 +28,13 @@ atlantic_df = pd.DataFrame(atlantic_df)
 ### Cleaning data
 # only select hurricanes from 1950 onwards, when they began naming storms
 atlantic_df = atlantic_df[atlantic_df['Date'] > 19500000]
+
 # subsetting relevant variables/columns
-atlantic_df = atlantic_df[["ID", "Name", "Date", "Time", "Event", "Status", "Latitude", "Longitude", "Maximum Wind", "Minimum Pressure"]]
+atlantic_df = atlantic_df[["ID", "Name", "Date", "Time", \
+                           "Event", "Status", "Latitude", \
+                           "Longitude", "Maximum Wind", \
+                           "Minimum Pressure"]]
+
 # using str.strip() method on all columns labeled 'object' to remove whitespace for easier sorting/querying later on
 print(atlantic_df.dtypes)
 atlantic_df['ID'] = atlantic_df['ID'].str.strip()
@@ -40,6 +47,9 @@ atlantic_df['Latitude'] = atlantic_df['Latitude'].str.strip()
 # trying groupby() for initial exploratory analysis
 print(atlantic_df.groupby('ID').mean())
 print(atlantic_df.groupby('Status').mean())
+
+# process 'Maximum Wind' from int to float
+atlantic_df['Maximum Wind'] = [float(mw) for mw in atlantic_df['Maximum Wind']]
 
 # process datetime
 # start with turning time into strings, to enforce proper %H%M format
@@ -89,20 +99,20 @@ for j in range(len(atlantic_df)):
     windValue = atlantic_df.iloc[j, atlantic_df.columns.get_loc('Maximum Wind')]
     
     if atlantic_df.iloc[j, atlantic_df.columns.get_loc('Status')] != 'HU':
-        category_list.append(0)
+        category_list.append(0.0)
     else:
         if windValue > 136:
-            category_list.append(5)
+            category_list.append(5.0)
         elif windValue > 112:
-            category_list.append(4)
+            category_list.append(4.0)
         elif windValue > 95:
-            category_list.append(3)
+            category_list.append(3.0)
         elif windValue > 82:
-            category_list.append(2)
+            category_list.append(2.0)
         elif windValue > 62:
-            category_list.append(1)
+            category_list.append(1.0)
         else:
-            category_list.append(0)
+            category_list.append(0.0)
     
 # join 'Datetime' and 'Category' lists to the main dataset
 atlantic_df['Datetime'] = datetime_list
@@ -160,7 +170,9 @@ for k in range(len(hurricane_list)):
     ## 'Duration' variables (3)
     # initial date, final date, duration
     # duration = delta between datetimes, object type is Timedelta for duration
-    durationList = [subset_df.Datetime.min(), subset_df.Datetime.max(), subset_df.Datetime.max() - subset_df.Datetime.min()]
+    durationList = [subset_df.Datetime.min(), \
+                    subset_df.Datetime.max(), \
+                    (subset_df.Datetime.max() - subset_df.Datetime.min()).total_seconds() / 3600]
     
     ## 'Distance Traveled' variable (1)
     # calculate total distance traveled by hurricane
@@ -247,32 +259,34 @@ for k in range(len(hurricane_list)):
 # maybe a shape drawn by the path and area(?)
 # variable(s) w/ list for path (lat/long)
 
-### VISUALIZATION
+## FOR VISUALIZATION
 # view min and max longitude and latitude points
 # use these figures to download a map from openstreetmap.org
-# visualize a map for top 20 longest duration storms
-# color = storm ID/name, size = category, alpha = landfall
+# visualize a map for top 95th percentile longest duration storms
+top95duration = atlantic_df_aggr[atlantic_df_aggr.duration >= \
+                                 atlantic_df_aggr.duration.quantile(0.95)].sort_values(by = ['duration'], ascending = False)
+top95duration = pd.merge(atlantic_df[atlantic_df.ID.isin(top95duration.ID.tolist())], 
+                         top95duration, on = ['ID', 'Name'])
 
-
-###UNCOMMENT BELOW FOR PLOTS###
-# boundaries = (atlantic_df.Longitude.min(), atlantic_df.Longitude.max(), atlantic_df.Latitude.min(), atlantic_df.Latitude.max())
-
-# ## preliminary plot w/ all data points
-# hurricane_map = plt.imread('map.png')
-# fig, ax = plt.subplots(figsize = (8, 8))
-# ## adjust alpha, color, size for future plots
-# # alpha = windspeed
-# # color = storm ID/name
-# # size = category/status(?)
-# ax.scatter(atlantic_df.Longitude, 
-#            atlantic_df.Latitude, 
-#            zorder = 1, alpha = 0.2, 
-#            c = 'b', s = 10)
-# ax.set_title('Plotting Hurricane Data on the Atlantic Ocean Map')
-# # axis limits for plot set to min and max figures for latitude and longitude
-# ax.set_xlim(boundaries[0], boundaries[1])
-# ax.set_ylim(boundaries[2], boundaries[3])
-# ax.imshow(hurricane_map, zorder = 0, extent = boundaries, aspect = 'auto')
+boundaries = (atlantic_df.Longitude.min(), atlantic_df.Longitude.max(), atlantic_df.Latitude.min(), atlantic_df.Latitude.max())
+c = top95duration.Category
+hurricane_map = plt.imread('map.png')
+fig, ax = plt.subplots(figsize = (8, 8))
+# color = category
+# size = duration
+ax.scatter(top95duration.Longitude,
+           top95duration.Latitude,
+           zorder = 1, 
+           s = top95duration.duration / 150,
+           alpha = 0.50,
+           c = c,
+           cmap = 'Blues')
+ax.set_title('Plotting The 95th Percentile of Longest-Lasting Hurricanes in the Atlantic Ocean')
+# axis limits for plot set to min and max figures for latitude and longitude
+ax.set_xlim(boundaries[0], boundaries[1])
+ax.set_ylim(boundaries[2], boundaries[3])
+ax.imshow(hurricane_map, zorder = 0, 
+          extent = boundaries, aspect = 'auto')
 
 # ## histogram
 # fig, ax = plt.subplots(1,1)
@@ -293,6 +307,6 @@ for k in range(len(hurricane_list)):
 ###UNCOMMENT ABOVE FOR PLOTS###
 
 ## saving dataset
-# atlantic_df.to_csv('atlantic_hurricanes.csv')
+atlantic_df.to_csv('atlantic_hurricanes.csv')
 ## saving aggregate dataset
-# atlantic_df_aggr.to_csv('atlantic_hurricanes_aggr.csv')
+atlantic_df_aggr.to_csv('atlantic_hurricanes_aggr.csv')
