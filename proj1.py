@@ -12,12 +12,9 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 from datetime import datetime, timedelta
 from math import sin, cos, sqrt, atan2, radians
-# # install necessary packages
-# import folium
-# from folium import plugins
-# import seaborn as sns
-# import webbrowser
-# import datetime
+import HeatMap as hm
+
+
 
 atlantic_df = pd.read_csv('atlantic.csv')
 
@@ -401,3 +398,16 @@ for idx, (col, ax) in enumerate(zip(categoryDurationData2.columns, axes.flatten(
     plt.subplots_adjust(wspace = 0.25, hspace = 0.25)
 plt.show()
 plt.savefig('hurricaneDurationByCategoryHistogram.png')
+
+
+
+##HeatMap
+df_heatmap = hm.loadData()
+
+#Landfall HeatMap
+df_landfall = hm.hurricaneLandFall(df_heatmap)
+hm.mapHurricane(df_landfall, "landfall.html")
+
+#No Landfall HeatMap
+df_no_landfall = hm.hurricaneNoLandFall(df_heatmap)
+hm.mapHurricane(df_no_landfall, "no_landfall.html")
