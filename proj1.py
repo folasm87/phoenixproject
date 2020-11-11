@@ -14,8 +14,6 @@ from datetime import datetime, timedelta
 from math import sin, cos, sqrt, atan2, radians
 import HeatMap as hm
 
-
-
 atlantic_df = pd.read_csv('atlantic.csv')
 
 # set as data frame
@@ -379,11 +377,14 @@ categoryDurationData2 = pd.DataFrame(categoryDurationData0).transpose()
 # plotting
 fig4, axes = plt.subplots(2, 3, figsize = (16, 8))
 fig4.suptitle('Storm Duration (hours) by Category', size = 'large')
+
+# set a universal y-limit equal to the largest number in the dataset, rounded to the nearest hundred, plus 50
+yLimit = round(atlantic_df_aggr.duration.max(),  -2) + 50
 for idx, (col, ax) in enumerate(zip(categoryDurationData2.columns, axes.flatten())):
     ax.bar(categoryDurationData2.index, categoryDurationData2[col])
-    ax.set_ylim(0, 750)
-    ax.set_yticks(np.arange(0, 750, step = 50))
-    ax.text(0, 550, 
+    ax.set_ylim(0, yLimit)
+    ax.set_yticks(np.arange(0, yLimit, step = 50))
+    ax.text(0, yLimit - 200, 
             'Summary Stats:\n' + \
             str(categoryDurationData2[col].count()) + ' Storms\n' + \
             str(categoryDurationData1[col].loc['Min']) + ' hours minimum\n' + \
@@ -399,15 +400,13 @@ for idx, (col, ax) in enumerate(zip(categoryDurationData2.columns, axes.flatten(
 plt.show()
 plt.savefig('hurricaneDurationByCategoryHistogram.png')
 
-
-
-##HeatMap
+## HeatMap
 df_heatmap = hm.loadData()
 
-#Landfall HeatMap
+# Landfall HeatMap
 df_landfall = hm.hurricaneLandFall(df_heatmap)
 hm.mapHurricane(df_landfall, "landfall.html")
 
-#No Landfall HeatMap
+# No Landfall HeatMap
 df_no_landfall = hm.hurricaneNoLandFall(df_heatmap)
-hm.mapHurricane(df_no_landfall, "no_landfall.html")
+hm.mapHurricane(df_no_landfall, "no_landfall.html"
