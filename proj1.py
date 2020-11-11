@@ -14,10 +14,10 @@ from colorspacious import cspace_converter
 from datetime import datetime, timedelta
 from math import sin, cos, sqrt, atan2, radians
 # # install necessary packages
-# import folium
-# from folium import plugins
+import folium
+from folium import plugins
 # import seaborn as sns
-# import webbrowser
+import webbrowser
 # import datetime
 
 atlantic_df = pd.read_csv('atlantic.csv')
@@ -298,12 +298,68 @@ ax.imshow(hurricane_map, zorder = 0,
 # plt.ylabel("Frequency")
 # plt.show()
 
+
+
+save_df = 'atlantic_modified.csv'
+
+atlantic_df.to_csv(save_df)
+
+
+df = pd.read_csv(save_df)
+
+
+#1. How many hurricanes make landfall.
+## count(select unique ID (or name) by Status = 'HU' and Event = 'L')
+
+filter_hurricane = df['Status']=='HU'
+filter_landfall = df['Event']=='L'
+filter_no_landfall = df['Event'] != 'L'
+
+df_1 = df.loc[filter_hurricane&filter_landfall]
+
+
+n = len(pd.unique(df_1['ID'])) 
+  
+print("Number of hurricanes to make Landfall:", n)
+
+
+df_landfall = df_1.drop_duplicates(subset=['ID'], keep='last', inplace=False)
+landfall = 'landfall.csv'
+
+df_landfall.to_csv(landfall)
+
+
 # ## add heatmap
-# landfallDF = df_landfall[["Latitude", "Longitude"]]
-# map_landfall = folium.Map(location = [25.7617, -80.191788], zoom_start = 13)
-# map_landfall.add_children(plugins.HeatMap(landfallDF, radius=15))
-# map_landfall.save("landfall.html")
-# webbrowser.open_new_tab("landfall.html")
+landfallDF = df_landfall[["Latitude", "Longitude"]]
+map_landfall = folium.Map(location = [25.7617, -80.191788], zoom_start = 13)
+map_landfall.add_child(plugins.HeatMap(landfallDF, radius=15))
+map_landfall.save("landfall.html")
+webbrowser.open_new_tab("landfall.html")
+
+
+
+#2. How many hurricanes reach a certain magnitude, but don’t necessarily make landfall.
+df_2 = df.loc[filter_hurricane&filter_no_landfall]
+
+df_no_landfall = df_2.loc[~df_2['ID'].isin(df_1['ID'])]
+
+n = len(pd.unique(df_no_landfall['ID'])) 
+  
+print("Number of hurricanes to reach a certain magnitude but no landfall:", n)
+
+#HeatMap of Hurricanes that do NOT make landfall
+
+noLandFallDF = df_no_landfall[["Latitude", "Longitude"]]
+
+map_no_landfall = folium.Map(location = [25.7617, -80.191788], zoom_start = 13)
+
+
+map_no_landfall.add_child(plugins.HeatMap(noLandFallDF, radius=15))
+
+map_no_landfall.save("no_landfall.html")
+webbrowser.open_new_tab("no_landfall.html")
+
+
 ###UNCOMMENT ABOVE FOR PLOTS###
 
 ## saving dataset
