@@ -290,7 +290,7 @@ plt.xlabel("Longitude")
 plt.ylabel("Latitude")
 ax.imshow(hurricane_map, zorder = 0, 
           extent = boundaries, aspect = 'auto')
-plt.savefig('95pctDurationHurricanes.png')
+fig0.savefig('95pctDurationHurricanes.png')
 
 # visualized a map for bottom 5th percentile duration storms
 bottom5duration = atlantic_df_aggr[atlantic_df_aggr.duration <= \
@@ -315,7 +315,7 @@ plt.xlabel("Longitude")
 plt.ylabel("Latitude")
 ax.imshow(hurricane_map, zorder = 0, 
           extent = boundaries, aspect = 'auto')
-plt.savefig('5pctDurationHurricanes.png')
+fig1.savefig('5pctDurationHurricanes.png')
 
 ## histogram
 fig2, ax = plt.subplots(figsize = (8, 8))
@@ -328,7 +328,7 @@ plt.title("Histogram of Hurricanes by Category 1950-2015")
 plt.xlabel("Category")
 plt.ylabel("Frequency")
 plt.show()
-plt.savefig('hurricaneCategoryHistogram.png')
+fig2.savefig('hurricaneCategoryHistogram.png')
 
 ## histogram, hurricanes by Category per year
 fig3, ax = plt.subplots(figsize = (32, 8))
@@ -355,7 +355,7 @@ plt.xlabel("Year")
 plt.ylabel("Frequency")
 plt.legend(loc = 'upper right')
 plt.show()
-plt.savefig('hurricaneCategoryByYearHistogram.png')
+fig3.savefig('hurricaneCategoryByYearHistogram.png')
 
 ## bar plot, storm duration per category
 categoryDurationData0 = [atlantic_df_aggr.duration[atlantic_df_aggr.maxCategory == 0].tolist(), \
@@ -398,7 +398,7 @@ for idx, (col, ax) in enumerate(zip(categoryDurationData2.columns, axes.flatten(
     ax.set_xticks([])
     plt.subplots_adjust(wspace = 0.25, hspace = 0.25)
 plt.show()
-plt.savefig('hurricaneDurationByCategoryHistogram.png')
+fig4.savefig('hurricaneDurationByCategoryHistogram.png')
 
 ## HeatMap
 df_heatmap = hm.loadData()
