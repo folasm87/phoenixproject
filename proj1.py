@@ -409,4 +409,4 @@ hm.mapHurricane(df_landfall, "landfall.html")
 
 # No Landfall HeatMap
 df_no_landfall = hm.hurricaneNoLandFall(df_heatmap)
-hm.mapHurricane(df_no_landfall, "no_landfall.html"
+hm.mapHurricane(df_no_landfall, "no_landfall.html")
